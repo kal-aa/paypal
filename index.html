@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Paypal - Available Courses</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      ul {
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+      li {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        width: 300px;
+        padding: 10px;
+        border-radius: 8px;
+      }
+      label {
+        display: block;
+        margin-top: 10px;
+      }
+      input[type="submit"] {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      input[type="submit"]:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Available Courses</h1>
+
+    <form>
+      <ul></ul>
+      <input type="submit" value="Checkout" />
+    </form>
+
+    <script>
+      const products = [
+        {
+          name: "Node.js Complete Course",
+          description: "Learn Node.js from scratch",
+          price: 100.0,
+        },
+        {
+          name: "React.js Complete Course",
+          description: "Learn React.js from scratch",
+          price: 120.0,
+        },
+        {
+          name: "JavaScript Essentials",
+          description: "Master JavaScript basics",
+          price: 80.0,
+        },
+      ];
+
+      const ul = document.querySelector("ul");
+
+      // Dynamically create product list and checkboxes
+      products.forEach((product, index) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <h2>${product.name}</h2>
+          <p>${product.description}</p>
+          <p>Price: $${product.price}</p>
+          <label>
+            <input type="checkbox" name="selectedProducts[]" value="${index}" />
+            Add to Cart
+          </label>
+        `;
+        ul.appendChild(li);
+      });
+
+      // Handle form submission using fetch
+      const form = document.querySelector("form");
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const selectedProducts = Array.from(
+          document.querySelectorAll('input[name="selectedProducts[]"]:checked')
+        );
+
+        if (selectedProducts.length === 0) {
+          alert("Please select at least one product.");
+          return;
+        }
+
+        // Create an array of selected products
+        const orders = selectedProducts.map((checkbox) => {
+          const index = checkbox.value;
+          return {
+            name: products[index].name,
+            price: products[index].price,
+            description: products[index].description,
+          };
+        });
+
+        // Send the orders to the server using fetch
+        try {
+          const response = await fetch("/pay", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ orders }),
+          });
+
+          const result = await response.json();
+          if (response.ok) {
+            window.location.href = result.url;
+          }
+
+          alert("There was an error processing the payment.");
+          console.error(result);
+        } catch (error) {
+          alert("An error occurred while submitting the payment.");
+          console.error(error);
+        }
+      });
+    </script>
+  </body>
+</html>

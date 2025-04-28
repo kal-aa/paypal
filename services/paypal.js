@@ -42,7 +42,7 @@ async function generateAccessToken() {
   }
 }
 
-export const createOrder = async () => {
+export const createOrder = async (orders) => {
   const accessToken = await generateAccessToken();
   const url = `${process.env.PAYPAL_BASE_URL}/v2/checkout/orders`;
 
@@ -51,33 +51,34 @@ export const createOrder = async () => {
     Authorization: `Bearer ${accessToken}`,
   };
 
-  const body = JSON.stringify({
-    intent: "CAPTURE",
-    purchase_units: [
+  const purchase_units = orders.map((order, index) => ({
+    reference_id: `order_${index + 1}`,
+    items: [
       {
-        items: [
-          {
-            name: "Node.js Complete Course",
-            description: "Learn Node.js from scratch",
-            quantity: "1",
-            unit_amount: {
-              currency_code: "USD",
-              value: "300.00",
-            },
-          },
-        ],
-        amount: {
+        name: order.name,
+        description: order.description,
+        quantity: "1",
+        unit_amount: {
           currency_code: "USD",
-          value: "300.00",
-          breakdown: {
-            item_total: {
-              currency_code: "USD",
-              value: "300.00",
-            },
-          },
+          value: order.price.toFixed(2),
         },
       },
     ],
+    amount: {
+      currency_code: "USD",
+      value: order.price.toFixed(2),
+      breakdown: {
+        item_total: {
+          currency_code: "USD",
+          value: order.price.toFixed(2),
+        },
+      },
+    },
+  }));
+
+  const body = JSON.stringify({
+    intent: "CAPTURE",
+    purchase_units,
     application_context: {
       return_url: `${process.env.BASE_URL}/complete-order`,
       cancel_url: `${process.env.BASE_URL}/cancel-order`,
@@ -93,7 +94,10 @@ export const createOrder = async () => {
       headers,
       body,
     });
+
     if (!response.ok) {
+      const result = await response.json();
+      console.error("Error creating order:", result);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -122,6 +126,5 @@ export const capturePayment = async (orderId) => {
   }
 
   const data = await response.json();
-    return data;
-
+  return data;
 };

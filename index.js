@@ -1,20 +1,26 @@
 import dotenv from "dotenv";
 import express from "express";
+import path from "path";
 import { capturePayment, createOrder } from "./services/paypal.js";
 
-const app = express();
 dotenv.config();
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.set("view engine", "ejs");
-
+const _dirname = path.resolve();
 app.get("/", (req, res) => {
-  res.render("index");
+  res.sendFile(_dirname + "/index.html");
 });
 
 app.post("/pay", async (req, res) => {
   try {
-    const url = await createOrder();
-    res.redirect(url);
+    if (!req.body.orders) {
+      return res.status(400).send("No orders found");
+    }
+
+    const url = await createOrder(req.body.orders);
+    res.json({ url });
   } catch (error) {
     res.send("Error " + error);
   }
